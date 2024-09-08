@@ -20,7 +20,31 @@ export const nftItems = [
     { id: 8, price: "6.5 ETH", title: "Mountainscape Wonders", image: "https://images.unsplash.com/photo-1545105366-5d6173ec720a?q=80&w=2970&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" }
 ];
 
+
 const NFTGrid = () => {
+    const [ethPriceInUSD, setEthPriceInUSD] = useState(null);
+
+    // Fetch Chainlink ETH/USD Price Feed
+    useEffect(() => {
+        const fetchEthPrice = async () => {
+            try {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const priceFeed = new ethers.Contract(
+                    '0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419', // Chainlink's ETH/USD Price Feed on Ethereum Mainnet
+                    ['function latestAnswer() view returns (int256)'],
+                    provider
+                );
+                const price = await priceFeed.latestAnswer();
+                const formattedPrice = ethers.utils.formatUnits(price, 8); // Adjust for decimals
+                setEthPriceInUSD(formattedPrice);
+            } catch (error) {
+                console.error('Error fetching ETH price:', error);
+            }
+        };
+
+        fetchEthPrice();
+    }, []);
+
     return (
         <div className="container mx-auto p-6">
             <div className="flex justify-between items-center mb-6">
@@ -57,8 +81,13 @@ const NFTGrid = () => {
 
                         {/* Info Section */}
                         <div className="p-4">
-                            <h3 className="text-xl font-semibold text-gray-900">{item.price}</h3>
+                            <h3 className="text-xl font-semibold text-gray-900">{item.price} ETH</h3>
                             <p className="text-gray-600">{item.title}</p>
+                            {ethPriceInUSD && (
+                                <p className="text-sm text-gray-500">
+                                    ≈ ${(parseFloat(item.price) * ethPriceInUSD).toFixed(2)} USD
+                                </p>
+                            )}
                         </div>
                     </Link>
                 ))}
@@ -66,5 +95,6 @@ const NFTGrid = () => {
         </div>
     );
 };
+
 
 export default NFTGrid;
